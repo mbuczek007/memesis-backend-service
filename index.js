@@ -6,7 +6,7 @@ const db = require('./db');
 const itemRouter = require('./routes/item-router');
 
 const app = express();
-const apiPort = 8000;
+const apiPort = 80;
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
@@ -20,4 +20,6 @@ app.get('/', (req, res) => {
 
 app.use('/api', itemRouter);
 
-app.listen(apiPort, () => console.log(`Server running on port ${apiPort}`));
+app.listen(apiPort, () =>
+  console.log(`Server running on port ${apiPort} HAHA`)
+);
