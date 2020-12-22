@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 mongoose
-  .connect('mongodb://77.55.215.248:27017/vps-memesis-km-database-dev', {
+  .connect('mongodb://127.0.0.1:27017/vps-memesis-km-database-dev', {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })

@@ -14,11 +14,11 @@ app.use(bodyParser.json());
 
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
-app.get('/', (req, res) => {
+/* app.get('/', (req, res) => {
   res.send('Hello World!');
-});
+}); */
 
-app.use('/api', itemRouter);
+app.use('/', itemRouter);
 
 app.listen(apiPort, () =>
   console.log(`Server running on port ${apiPort} HAHA`)

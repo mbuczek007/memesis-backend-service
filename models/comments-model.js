@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const AutoIncrement = require('mongoose-sequence')(mongoose);
 const Schema = mongoose.Schema;
 
 const Comments = new Schema(
@@ -14,5 +13,4 @@ const Comments = new Schema(
   { timestamps: true }
 );
 
-Comments.plugin(AutoIncrement, { inc_field: 'id' });
 module.exports = mongoose.model('comments', Comments);
