@@ -84,15 +84,16 @@ login = (req, res) => {
             });
           }
 
+          const expirationTime = Math.floor(Date.now() / 1000) + 60 * 60;
           const token = jwt.sign(
             { userId: user.user_id },
             process.env.TOKEN_SECRET,
-            { expiresIn: '24h' }
+            { expiresIn: expirationTime }
           );
 
           return res.status(200).json({
-            success: true,
             token: token,
+            expirationTime: expirationTime,
             userData: {
               id: user.user_id,
               name: user.name,
