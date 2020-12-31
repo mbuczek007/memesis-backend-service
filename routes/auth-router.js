@@ -13,5 +13,6 @@ router.post(
 );
 
 router.post('/login', AuthCtrl.login);
+router.post('/facebooklogin', AuthCtrl.facebooklogin);
 
 module.exports = router;
