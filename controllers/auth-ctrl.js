@@ -28,23 +28,31 @@ const error500Response = (err, res) => {
   });
 };
 
+const parseNameOrEmail = (nameOrEmail) => {
+  let string = nameOrEmail.replace(/\s/g, '');
+  return string.trim().toLowerCase();
+};
+
 signup = async (req, res) => {
   const { name, email, password } = req.body;
+  const parsedEmail = parseNameOrEmail(email);
 
-  await User.findOne({ $or: [{ email }, { name }] })
+  await User.findOne({
+    $or: [{ email: parsedEmail }, { name: name.trim() }],
+  })
     .then((user) => {
       if (user) {
-        let errors = [];
+        let error = '';
 
-        if (user.name === name) {
-          errors.push('NAME-EXISTS');
+        if (user.name === name.trim()) {
+          error = 'Podana nazwa uzytkownika jest juz uzywana.';
         }
 
-        if (user.email === email.toLowerCase()) {
-          errors.push('EMAIL-ADDRESS-EXISTS');
+        if (user.email === parsedEmail) {
+          error = 'Adres e-mail jest juz w uzyciu';
         }
 
-        return res.status(400).json({ success: false, errors: errors });
+        return res.status(400).json({ success: false, error });
       } else {
         const validationErrors = validationResult(req);
         if (!validationErrors.isEmpty()) {
@@ -56,23 +64,23 @@ signup = async (req, res) => {
         bcrypt
           .hash(password, 10)
           .then((hash) => {
-            let newUser = new User({ name, email, password: hash });
+            let newUser = new User({
+              name: name.trim(),
+              email: parsedEmail,
+              password: hash,
+            });
 
-            newUser
-              .save()
-              .then(() => {
-                return res.status(201).json({
-                  success: true,
-                  message: 'USER-CREATED',
-                });
-              })
-              .catch((error) => {
+            newUser.save((err, data) => {
+              if (err) {
                 return res.status(400).json({
-                  error,
+                  error: err,
                   success: false,
                   message: 'USER-NOT-CREATED',
                 });
-              });
+              }
+
+              logInResponse(data, res);
+            });
           })
           .catch((err) => {
             return res.status(500).json({
@@ -80,6 +88,35 @@ signup = async (req, res) => {
               error: err,
             });
           });
+      }
+    })
+    .catch((err) => {
+      error500Response(err, res);
+    });
+};
+
+checkNameOrEmail = async (req, res) => {
+  const { nameOrEmail } = req.body;
+  const parsedNameOrEmail = parseNameOrEmail(nameOrEmail);
+
+  await User.findOne({
+    $or: [{ email: parsedNameOrEmail }, { name: nameOrEmail.trim() }],
+  })
+    .then((user) => {
+      if (user) {
+        let error = '';
+
+        if (user.name === nameOrEmail.trim()) {
+          error = 'Podana nazwa uzytkownika jest juz uzywana.';
+        }
+
+        if (user.email === parsedNameOrEmail) {
+          error = 'Adres e-mail jest juz w uzyciu';
+        }
+
+        return res.status(400).json({ success: false, error });
+      } else {
+        return res.status(200).json({ success: true, valid: true });
       }
     })
     .catch((err) => {
@@ -164,6 +201,7 @@ facebooklogin = (req, res) => {
 
 module.exports = {
   signup,
+  checkNameOrEmail,
   login,
   facebooklogin,
 };
