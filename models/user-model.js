@@ -22,6 +22,10 @@ const User = new Schema(
       min: 6,
       max: 20,
     },
+    fb_id: {
+      type: Number,
+      required: false,
+    },
   },
   { timestamps: true }
 );

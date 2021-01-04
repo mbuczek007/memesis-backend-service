@@ -21,10 +21,9 @@ const logInResponse = (user, res) => {
   });
 };
 
-const error500Response = (err, res) => {
+const error500Response = (error, res) => {
   return res.status(500).json({
-    success: false,
-    error: err,
+    error: 'Wystąpił problem z połączeniem. Prosimy spróbować później.',
   });
 };
 
@@ -49,16 +48,16 @@ signup = async (req, res) => {
         }
 
         if (user.email === parsedEmail) {
-          error = 'Adres e-mail jest juz w uzyciu';
+          error = 'Adres e-mail jest juz w uzyciu.';
         }
 
-        return res.status(400).json({ success: false, error });
+        return res.status(400).json({ error });
       } else {
         const validationErrors = validationResult(req);
         if (!validationErrors.isEmpty()) {
           return res
             .status(400)
-            .json({ success: false, errors: validationErrors.array() });
+            .json({ error: 'Błąd podczas walidacji danych.' });
         }
 
         bcrypt
@@ -70,57 +69,58 @@ signup = async (req, res) => {
               password: hash,
             });
 
-            newUser.save((err, data) => {
-              if (err) {
+            newUser.save((error, data) => {
+              if (error) {
                 return res.status(400).json({
-                  error: err,
-                  success: false,
-                  message: 'USER-NOT-CREATED',
+                  error:
+                    'Wystąpił problem podczas tworzenia nowego uzytkownika. Prosimy spróbować później.',
                 });
               }
 
               logInResponse(data, res);
             });
           })
-          .catch((err) => {
+          .catch((error) => {
             return res.status(500).json({
-              success: false,
-              error: err,
+              error,
             });
           });
       }
     })
-    .catch((err) => {
-      error500Response(err, res);
+    .catch((error) => {
+      error500Response(error, res);
     });
 };
 
 checkNameOrEmail = async (req, res) => {
-  const { nameOrEmail } = req.body;
+  const { mode, nameOrEmail } = req.body;
   const parsedNameOrEmail = parseNameOrEmail(nameOrEmail);
 
-  await User.findOne({
-    $or: [{ email: parsedNameOrEmail }, { name: nameOrEmail.trim() }],
-  })
+  const args =
+    mode === 'email'
+      ? { email: parsedNameOrEmail }
+      : { name: nameOrEmail.trim() };
+
+  await User.findOne(args)
     .then((user) => {
       if (user) {
         let error = '';
 
-        if (user.name === nameOrEmail.trim()) {
+        if (mode === 'name' && user.name === nameOrEmail.trim()) {
           error = 'Podana nazwa uzytkownika jest juz uzywana.';
         }
 
-        if (user.email === parsedNameOrEmail) {
+        if (mode === 'email' && user.email === parsedNameOrEmail) {
           error = 'Adres e-mail jest juz w uzyciu';
         }
 
-        return res.status(400).json({ success: false, error });
+        return res.status(400).json({ error });
       } else {
-        return res.status(200).json({ success: true, valid: true });
+        return res.status(200).json({ success: true });
       }
     })
-    .catch((err) => {
-      error500Response(err, res);
+    .catch((error) => {
+      error500Response(error, res);
     });
 };
 
@@ -129,8 +129,7 @@ login = (req, res) => {
     .then((user) => {
       if (!user) {
         return res.status(401).json({
-          success: false,
-          errors: 'LOGIN-FAILED',
+          error: 'Nieprawidłowy login lub hasło.',
         });
       }
       bcrypt
@@ -138,19 +137,18 @@ login = (req, res) => {
         .then((valid) => {
           if (!valid) {
             return res.status(401).json({
-              success: false,
-              errors: 'LOGIN-FAILED',
+              error: 'Nieprawidłowy login lub hasło.',
             });
           }
 
           logInResponse(user, res);
         })
-        .catch((err) => {
-          error500Response(err, res);
+        .catch((error) => {
+          error500Response(error, res);
         });
     })
-    .catch((err) => {
-      error500Response(err, res);
+    .catch((error) => {
+      error500Response(error, res);
     });
 };
 
@@ -163,38 +161,76 @@ facebooklogin = (req, res) => {
   })
     .then((response) => response.json())
     .then((response) => {
+      if (response.error) {
+        return res.status(400).json({
+          error: 'Wystąpił problem z połączeniem. Prosimy spróbować później.',
+        });
+      }
+
       const { id, email, name } = response;
-
-      User.findOne({ email })
-        .then((user) => {
-          if (user) {
-            logInResponse(user, res);
+      User.findOne({ fb_id: id })
+        .then((fbUser) => {
+          if (fbUser) {
+            logInResponse(fbUser, res);
           } else {
-            const password = id + email + process.env.TOKEN_SECRET;
-            bcrypt
-              .hash(password, 10)
-              .then((hash) => {
-                let newUser = new User({ name, email, password: hash });
+            const parsedEmail = parseNameOrEmail(email);
+            User.findOne({
+              $or: [{ email: parsedEmail }, { name: name.trim() }],
+            })
+              .then((user) => {
+                if (user) {
+                  let error = '';
 
-                newUser.save((err, data) => {
-                  if (err) {
-                    return res.status(400).json({
-                      error: err,
-                      success: false,
-                      message: 'USER-NOT-CREATED',
-                    });
+                  if (user.name === name.trim()) {
+                    error =
+                      'Pobrana nazwa uzytkownika (' +
+                      name.trim() +
+                      ') jest juz uzywana.';
                   }
 
-                  logInResponse(data, res);
-                });
+                  if (user.email === parsedEmail) {
+                    error =
+                      'Pobrany adres e-mail (' +
+                      parsedEmail +
+                      ') jest juz w uzyciu.';
+                  }
+
+                  return res.status(400).json({ error });
+                } else {
+                  const password = id + email + process.env.TOKEN_SECRET;
+                  bcrypt
+                    .hash(password, 10)
+                    .then((hash) => {
+                      let newUser = new User({
+                        fb_id: id,
+                        name: name.trim(),
+                        email: parsedEmail,
+                        password: hash,
+                      });
+
+                      newUser.save((error, data) => {
+                        if (error) {
+                          return res.status(400).json({
+                            error:
+                              'Wystąpił problem podczas tworzenia nowego uzytkownika. Prosimy spróbować później',
+                          });
+                        }
+
+                        logInResponse(data, res);
+                      });
+                    })
+                    .catch((error) => {
+                      error500Response(error, res);
+                    });
+                }
               })
-              .catch((err) => {
-                error500Response(err, res);
+              .catch((error) => {
+                error500Response(error, res);
               });
           }
         })
-        .catch((err) => {
-          error500Response(err, res);
+        .catch((error) => {
+          error500Response(error, res);
         });
     });
 };
