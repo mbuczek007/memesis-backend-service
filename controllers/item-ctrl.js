@@ -11,33 +11,31 @@ checkMode = (mode) => {
 };
 
 createItem = (req, res) => {
-  const body = req.body;
+  const { bodyPayload } = req.body;
 
-  if (!body) {
+  if (!req.body) {
     return res.status(400).json({
-      success: false,
-      error: 'You must provide a item',
+      error: 'Nie znaleziono danych do dodania.',
     });
   }
 
-  const item = new Item(body);
+  const item = new Item(bodyPayload);
 
   if (!item) {
-    return res.status(400).json({ success: false, error: err });
+    return res.status(400).json({ error: 'Bład podczas walidacji danych.' });
   }
 
   item
     .save()
     .then(() => {
       return res.status(201).json({
-        success: true,
-        message: 'Item created!',
+        message: 'Twój Motywator został dodany pomyślnie.',
       });
     })
-    .catch((error) => {
+    .catch(() => {
       return res.status(400).json({
-        error,
-        message: 'Item not created!',
+        error:
+          'Wystąpił problem podczas dodawania treści. Prosimy spróbować później.',
       });
     });
 };

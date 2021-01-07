@@ -5,9 +5,9 @@ const mongoosePaginate = require('mongoose-paginate-v2');
 
 const Item = new Schema(
   {
-    title: { type: String, required: true },
-    subtitle: { type: String, required: false },
-    source: { type: String, required: false },
+    title: { type: String, required: true, min: 3, max: 250 },
+    subtitle: { type: String, required: false, max: 1500 },
+    source: { type: String, required: false, max: 1500 },
     mediaUrl: { type: String, required: true },
     mediaType: { type: String, required: true },
     isAccepted: { type: Boolean, required: false, default: false },

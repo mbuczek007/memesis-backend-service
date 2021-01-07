@@ -8,15 +8,13 @@ authCheck = (req, res, next) => {
 
     if (req.body.userId && req.body.userId !== userId) {
       return res.status(401).json({
-        success: false,
-        error: 'INVALID-USER-ID',
+        error: 'INVALID-REQUEST',
       });
     } else {
       next();
     }
   } catch {
     return res.status(401).json({
-      success: false,
       error: 'INVALID-REQUEST',
     });
   }

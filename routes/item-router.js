@@ -4,9 +4,6 @@ const ItemCtrl = require('../controllers/item-ctrl');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
-/* router.post('/item', ItemCtrl.createItem);
-router.delete('/item/:id', ItemCtrl.deleteItem);
-; */
 
 router.post('/item', auth.authCheck, ItemCtrl.createItem);
 router.get('/item/:id', ItemCtrl.getItemById);

@@ -212,7 +212,7 @@ facebooklogin = (req, res) => {
                         if (error) {
                           return res.status(400).json({
                             error:
-                              'Wystąpił problem podczas tworzenia nowego uzytkownika. Prosimy spróbować później',
+                              'Wystąpił problem podczas tworzenia nowego uzytkownika. Prosimy spróbować później.',
                           });
                         }
 
