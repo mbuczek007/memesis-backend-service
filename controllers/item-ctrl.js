@@ -66,17 +66,20 @@ createItem = (req, res) => {
 
  */
 
-getItemById = async (req, res) => {
-  await Item.findOne({ id: req.params.id }, (err, item) => {
-    if (err) {
-      return res.status(400).json({ success: false, error: err });
-    }
+getItemById = (req, res) => {
+  Item.findOne({
+    id: req.params.id,
+  })
+    .then((item) => {
+      if (!item) {
+        return res.status(404).json({ error: `Item not found` });
+      }
 
-    if (!item) {
-      return res.status(404).json({ success: false, error: `Item not found` });
-    }
-    return res.status(200).json({ success: true, data: item });
-  }).catch((err) => console.log(err));
+      return res.status(200).json({ item });
+    })
+    .catch((error) => {
+      error500Response(error, res);
+    });
 };
 
 getItems = (req, res) => {
@@ -100,21 +103,10 @@ getItems = (req, res) => {
     });
 };
 
-getItemsCount = async (req, res) => {
-  await Item.countDocuments(checkMode(req.params.mode), (err, count) => {
-    if (err) {
-      return res.status(400).json({ success: false, error: err });
-    }
-
-    return res.status(200).json({ success: true, itemsCount: count });
-  }).catch((err) => console.log(err));
-};
-
 module.exports = {
   /*   
   deleteItem, */
   createItem,
   getItems,
-  getItemsCount,
   getItemById,
 };
