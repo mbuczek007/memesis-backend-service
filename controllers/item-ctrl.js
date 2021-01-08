@@ -1,13 +1,23 @@
 const Item = require('../models/item-model');
 
 checkMode = (mode) => {
-  if (mode === 'accepted' || mode === 'pending' || mode === 'top') {
+  if (mode === 'accepted' || mode === 'top') {
     return {
-      isAccepted: mode === 'pending' ? false : true,
+      isAccepted: true,
+    };
+  } else if (mode === 'pending') {
+    return {
+      isAccepted: false,
     };
   } else {
     return {};
   }
+};
+
+error500Response = (error, res) => {
+  return res.status(500).json({
+    error: 'Wystąpił problem z połączeniem. Prosimy spróbować później.',
+  });
 };
 
 createItem = (req, res) => {
@@ -69,22 +79,25 @@ getItemById = async (req, res) => {
   }).catch((err) => console.log(err));
 };
 
-getItems = async (req, res) => {
-  await Item.paginate(checkMode(req.params.mode), {
+getItems = (req, res) => {
+  Item.paginate(checkMode(req.params.mode), {
     offset: req.params.offset,
     limit: req.params.perPage,
-    sort: { createdAt: 'desc' },
+    sort: {
+      ...(req.params.mode !== 'top' && { createdAt: 'desc' }),
+      ...(req.params.mode === 'top' && { votes: 'desc' }),
+    },
   })
     .then((items) => {
-      if (!items.docs.length) {
-        return res
-          .status(404)
-          .json({ success: false, error: `Items not found` });
+      if (items.totalDocs === 0) {
+        return res.status(404).json({ error: `Items not found` });
       }
 
-      return res.status(200).json({ success: true, items });
+      return res.status(200).json({ items });
     })
-    .catch((err) => console.log(err));
+    .catch((error) => {
+      error500Response(error, res);
+    });
 };
 
 getItemsCount = async (req, res) => {
