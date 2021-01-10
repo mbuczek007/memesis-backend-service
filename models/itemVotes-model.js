@@ -3,9 +3,8 @@ const Schema = mongoose.Schema;
 
 const ItemVotes = new Schema(
   {
-    userId: { type: Number, required: false },
     votedItemId: { type: Number, required: true },
-    ipAddress: { type: Number, required: true },
+    ipAddress: { type: String, required: true },
   },
   { timestamps: true }
 );

@@ -1,4 +1,5 @@
 const Item = require('../models/item-model');
+const ItemVotes = require('../models/itemVotes-model');
 
 checkMode = (mode) => {
   if (mode === 'accepted' || mode === 'top') {
@@ -103,10 +104,87 @@ getItems = (req, res) => {
     });
 };
 
+itemVote = (req, res) => {
+  const { itemId, voteValue } = req.body;
+  const ip = req.connection.remoteAddress;
+
+  let voteMode = 0;
+  let votesCountMode = 1;
+
+  if (voteValue === 'up') {
+    voteMode = 1;
+  } else if (voteValue === 'down') {
+    voteMode = -1;
+  } else {
+    votesCountMode = 0;
+  }
+
+  ItemVotes.findOne({
+    votedItemId: itemId,
+    ipAddress: ip,
+  })
+    .then((item) => {
+      if (item) {
+        return res.status(404).json({ error: 'Juz głosowałeś' });
+      }
+
+      Item.findOne({
+        id: itemId,
+      })
+        .then((item) => {
+          if (!item) {
+            return res.status(404).json({ error: `Item not found` });
+          }
+
+          const itemVote = new ItemVotes({
+            votedItemId: itemId,
+            ipAddress: ip,
+          });
+
+          if (!itemVote) {
+            return res.status(400).json({
+              error: 'Bład podczas walidacji danych.',
+            });
+          }
+
+          itemVote
+            .save()
+            .then(() => {
+              Item.update(
+                { id: itemId },
+                { $inc: { votes: voteMode, votesCount: votesCountMode } },
+                (err, result) => {
+                  if (err) {
+                    return res.status(400).json({ error: err });
+                  } else {
+                    return res.status(200).json({
+                      data: result,
+                      message: 'Głos oddany',
+                    });
+                  }
+                }
+              );
+            })
+            .catch(() => {
+              return res.status(400).json({
+                error: 'Błąd podczas oddania głosu.',
+              });
+            });
+        })
+        .catch((error) => {
+          error500Response(error, res);
+        });
+    })
+    .catch((error) => {
+      error500Response(error, res);
+    });
+};
+
 module.exports = {
   /*   
   deleteItem, */
   createItem,
   getItems,
   getItemById,
+  itemVote,
 };
