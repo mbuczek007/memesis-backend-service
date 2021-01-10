@@ -1,5 +1,7 @@
 const Item = require('../models/item-model');
 const ItemVotes = require('../models/itemVotes-model');
+const User = require('../models/user-model');
+const Comments = require('../models/comments-model');
 
 checkMode = (mode) => {
   if (mode === 'accepted' || mode === 'top') {
@@ -68,15 +70,59 @@ createItem = (req, res) => {
  */
 
 getItemById = (req, res) => {
-  Item.findOne({
-    id: req.params.id,
-  })
+  Item.aggregate([
+    {
+      $match: {
+        $and: [
+          {
+            id: parseInt(req.params.id),
+          },
+        ],
+      },
+    },
+    {
+      $lookup: {
+        from: User.collection.name,
+        localField: 'userId',
+        foreignField: 'user_id',
+        as: 'userName',
+      },
+    },
+    { $unwind: '$userName' },
+    {
+      $lookup: {
+        from: Comments.collection.name,
+        localField: 'id',
+        foreignField: 'itemId',
+        as: 'commentsCount',
+      },
+    },
+    {
+      $project: {
+        id: 1,
+        title: 1,
+        subtitle: 1,
+        source: 1,
+        mediaUrl: 1,
+        mediaType: 1,
+        isAccepted: 1,
+        acceptedDate: 1,
+        disableComments: 1,
+        votes: 1,
+        votesCount: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        userName: '$userName.name',
+        commentsCount: { $size: '$commentsCount' },
+      },
+    },
+  ])
     .then((item) => {
-      if (!item) {
+      if (item.length === 0) {
         return res.status(404).json({ error: `Item not found` });
       }
 
-      return res.status(200).json({ item });
+      return res.status(200).json({ item: item[0] });
     })
     .catch((error) => {
       error500Response(error, res);
@@ -84,7 +130,51 @@ getItemById = (req, res) => {
 };
 
 getItems = (req, res) => {
-  Item.paginate(checkMode(req.params.mode), {
+  const aggregate = Item.aggregate([
+    {
+      $match: {
+        $and: [checkMode(req.params.mode)],
+      },
+    },
+    {
+      $lookup: {
+        from: User.collection.name,
+        localField: 'userId',
+        foreignField: 'user_id',
+        as: 'userName',
+      },
+    },
+    { $unwind: '$userName' },
+    {
+      $lookup: {
+        from: Comments.collection.name,
+        localField: 'id',
+        foreignField: 'itemId',
+        as: 'commentsCount',
+      },
+    },
+    {
+      $project: {
+        id: 1,
+        title: 1,
+        subtitle: 1,
+        source: 1,
+        mediaUrl: 1,
+        mediaType: 1,
+        isAccepted: 1,
+        acceptedDate: 1,
+        disableComments: 1,
+        votes: 1,
+        votesCount: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        userName: '$userName.name',
+        commentsCount: { $size: '$commentsCount' },
+      },
+    },
+  ]);
+
+  Item.aggregatePaginate(aggregate, {
     offset: req.params.offset,
     limit: req.params.perPage,
     sort: {
