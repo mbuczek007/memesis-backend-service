@@ -112,6 +112,7 @@ getItemById = (req, res) => {
         votesCount: 1,
         createdAt: 1,
         updatedAt: 1,
+        firstAcceptedDate: 1,
         userName: '$userName.name',
         commentsCount: { $size: '$commentsCount' },
       },
@@ -168,6 +169,7 @@ getItems = (req, res) => {
         votesCount: 1,
         createdAt: 1,
         updatedAt: 1,
+        firstAcceptedDate: 1,
         userName: '$userName.name',
         commentsCount: { $size: '$commentsCount' },
       },
@@ -178,7 +180,8 @@ getItems = (req, res) => {
     offset: req.params.offset,
     limit: req.params.perPage,
     sort: {
-      ...(req.params.mode !== 'top' && { createdAt: 'desc' }),
+      ...(req.params.mode === 'accepted' && { firstAcceptedDate: 'desc' }),
+      ...(req.params.mode === 'pending' && { createdAt: 'desc' }),
       ...(req.params.mode === 'top' && { votes: 'desc' }),
     },
   })
@@ -240,7 +243,7 @@ itemVote = (req, res) => {
           itemVote
             .save()
             .then(() => {
-              Item.update(
+              Item.updateOne(
                 { id: itemId },
                 { $inc: { votes: voteMode, votesCount: votesCountMode } },
                 (err, result) => {
@@ -270,6 +273,39 @@ itemVote = (req, res) => {
     });
 };
 
+itemStatusChange = (req, res) => {
+  const { itemId, status, itemFirstAcceptedDate, userId } = req.body;
+
+  let updatedData = {};
+
+  if (!itemFirstAcceptedDate) {
+    updatedData = {
+      isAccepted: status,
+      firstAcceptedDate: new Date(),
+      statusChangerUserId: userId,
+    };
+  } else {
+    updatedData = { isAccepted: status, statusChangerUserId: userId };
+  }
+
+  Item.findOneAndUpdate(
+    { id: itemId },
+    { $set: updatedData },
+    { new: true },
+    (err, doc) => {
+      if (err) {
+        return res.status(400).json({
+          error: 'Błąd podczas zmiany statusu.',
+        });
+      }
+
+      return res.status(200).json({
+        data: doc,
+      });
+    }
+  );
+};
+
 module.exports = {
   /*   
   deleteItem, */
@@ -277,4 +313,5 @@ module.exports = {
   getItems,
   getItemById,
   itemVote,
+  itemStatusChange,
 };
