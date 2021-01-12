@@ -232,6 +232,9 @@ facebooklogin = (req, res) => {
         .catch((error) => {
           error500Response(error, res);
         });
+    })
+    .catch((error) => {
+      error500Response(error, res);
     });
 };
 
