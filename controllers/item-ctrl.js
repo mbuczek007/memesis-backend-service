@@ -24,7 +24,7 @@ error500Response = (error, res) => {
 };
 
 createItem = (req, res) => {
-  const { bodyPayload } = req.body;
+  const { title, subtitle, source, mediaUrl, mediaType, userId } = req.body;
 
   if (!req.body) {
     return res.status(400).json({
@@ -32,7 +32,14 @@ createItem = (req, res) => {
     });
   }
 
-  const item = new Item(bodyPayload);
+  const item = new Item({
+    title,
+    subtitle,
+    source,
+    mediaUrl,
+    mediaType,
+    userId,
+  });
 
   if (!item) {
     return res.status(400).json({ error: 'Bład podczas walidacji danych.' });
