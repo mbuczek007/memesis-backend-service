@@ -9,4 +9,4 @@ const ItemVotes = new Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model('itemVotes', ItemVotes);
+module.exports = mongoose.model('itemvotes', ItemVotes);

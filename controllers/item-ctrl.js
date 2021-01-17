@@ -1,7 +1,7 @@
 const Item = require('../models/item-model');
-const ItemVotes = require('../models/itemVotes-model');
+const ItemVotes = require('../models/item-votes-model');
 const User = require('../models/user-model');
-const Comments = require('../models/comments-model');
+const Comment = require('../models/comment-model');
 
 checkMode = (mode) => {
   if (mode === 'accepted' || mode === 'top') {
@@ -98,7 +98,7 @@ getItemById = (req, res) => {
     { $unwind: '$userName' },
     {
       $lookup: {
-        from: Comments.collection.name,
+        from: Comment.collection.name,
         localField: 'id',
         foreignField: 'itemId',
         as: 'commentsCount',
@@ -155,7 +155,7 @@ getItems = (req, res) => {
     { $unwind: '$userName' },
     {
       $lookup: {
-        from: Comments.collection.name,
+        from: Comment.collection.name,
         localField: 'id',
         foreignField: 'itemId',
         as: 'commentsCount',

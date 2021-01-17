@@ -10,4 +10,4 @@ const CommentVotes = new Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model('commentVotes', CommentVotes);
+module.exports = mongoose.model('commentvotes', CommentVotes);
