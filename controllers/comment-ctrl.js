@@ -41,14 +41,15 @@ createComment = (req, res) => {
 
           comment
             .save()
-            .then(() => {
+            .then((data) => {
               return res.status(201).json({
                 message: 'Twój komentarz został dodany pomyślnie.',
+                newCommentId: data.comment_id,
               });
             })
             .catch((error) => {
               return res.status(400).json({
-                error: 'Wystąpił problem podczas zapisu komentarza.',
+                error: 'Wystąpił problem podczas dodawania komentarza.',
                 err: error,
               });
             });
