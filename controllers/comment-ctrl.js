@@ -1,4 +1,5 @@
 const Comment = require('../models/comment-model');
+const CommentVotes = require('../models/comment-votes-model');
 const User = require('../models/user-model');
 const Item = require('../models/item-model');
 
@@ -120,7 +121,83 @@ getComments = (req, res) => {
     });
 };
 
+commentVote = (req, res) => {
+  const { commentId, voteValue, userId } = req.body;
+
+  let voteMode = 0;
+  let votesCountMode = 1;
+
+  if (voteValue === 'up') {
+    voteMode = 1;
+  } else if (voteValue === 'down') {
+    voteMode = -1;
+  } else {
+    votesCountMode = 0;
+  }
+
+  CommentVotes.findOne({
+    votedCommentId: commentId,
+    userId: userId,
+  })
+    .then((vote) => {
+      if (vote) {
+        return res.status(404).json({ error: 'Juz głosowałeś' });
+      }
+
+      Comment.findOne({
+        comment_id: commentId,
+      })
+        .then((comment) => {
+          if (!comment) {
+            return res.status(404).json({ error: `Comment not found` });
+          }
+
+          const commentVote = new CommentVotes({
+            userId: userId,
+            votedCommentId: commentId,
+          });
+
+          if (!commentVote) {
+            return res.status(400).json({
+              error: 'Bład podczas walidacji danych.',
+            });
+          }
+
+          commentVote
+            .save()
+            .then(() => {
+              Comment.updateOne(
+                { comment_id: commentId },
+                { $inc: { votes: voteMode, votesCount: votesCountMode } },
+                (err, result) => {
+                  if (err) {
+                    return res.status(400).json({ error: err });
+                  } else {
+                    return res.status(200).json({
+                      data: result,
+                      message: 'Głos oddany',
+                    });
+                  }
+                }
+              );
+            })
+            .catch(() => {
+              return res.status(400).json({
+                error: 'Błąd podczas oddania głosu.',
+              });
+            });
+        })
+        .catch((error) => {
+          error500Response(error, res);
+        });
+    })
+    .catch((error) => {
+      error500Response(error, res);
+    });
+};
+
 module.exports = {
   createComment,
   getComments,
+  commentVote,
 };
