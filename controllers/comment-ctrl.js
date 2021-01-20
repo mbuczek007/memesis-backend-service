@@ -22,6 +22,12 @@ createComment = (req, res) => {
         });
       }
 
+      if (response.disableComments) {
+        return res.status(404).json({
+          error: 'Komentarze do tego itemu są wyłączone.',
+        });
+      }
+
       Comment.findOne({
         comment_id: parentCommentId,
       })
@@ -149,7 +155,13 @@ commentVote = (req, res) => {
       })
         .then((comment) => {
           if (!comment) {
-            return res.status(404).json({ error: `Comment not found` });
+            return res.status(404).json({ error: 'Nie znaleziono komentarza' });
+          }
+
+          if (comment.userId === userId) {
+            return res
+              .status(404)
+              .json({ error: 'Nie mozna głosować na swoje komentarze' });
           }
 
           const commentVote = new CommentVotes({
@@ -174,7 +186,6 @@ commentVote = (req, res) => {
                     return res.status(400).json({ error: err });
                   } else {
                     return res.status(200).json({
-                      data: result,
                       message: 'Głos oddany',
                     });
                   }

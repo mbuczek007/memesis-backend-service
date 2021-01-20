@@ -24,7 +24,15 @@ error500Response = (error, res) => {
 };
 
 createItem = (req, res) => {
-  const { title, subtitle, source, mediaUrl, mediaType, userId } = req.body;
+  const {
+    title,
+    subtitle,
+    source,
+    mediaUrl,
+    mediaType,
+    disableComments,
+    userId,
+  } = req.body;
 
   if (!req.body) {
     return res.status(400).json({
@@ -38,6 +46,7 @@ createItem = (req, res) => {
     source,
     mediaUrl,
     mediaType,
+    disableComments,
     userId,
   });
 
