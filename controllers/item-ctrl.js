@@ -215,7 +215,7 @@ getItems = (req, res) => {
 
 itemVote = (req, res) => {
   const { itemId, voteValue } = req.body;
-  const ip = req.connection.remoteAddress;
+  const ip = req.clientIp;
 
   let voteMode = 0;
   let votesCountMode = 1;

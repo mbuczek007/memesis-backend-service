@@ -26,6 +26,8 @@ const User = new Schema(
       type: Number,
       required: false,
     },
+    signUpIp: { type: String, required: true },
+    lastLoginIp: { type: String, required: true },
   },
   { timestamps: true }
 );

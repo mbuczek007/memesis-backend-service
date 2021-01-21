@@ -35,6 +35,7 @@ const parseNameOrEmail = (nameOrEmail) => {
 signup = async (req, res) => {
   const { name, email, password } = req.body;
   const parsedEmail = parseNameOrEmail(email);
+  const ip = req.clientIp;
 
   await User.findOne({
     $or: [{ email: parsedEmail }, { name: name.trim() }],
@@ -67,6 +68,8 @@ signup = async (req, res) => {
               name: name.trim(),
               email: parsedEmail,
               password: hash,
+              signUpIp: ip,
+              lastLoginIp: ip,
             });
 
             newUser.save((error, data) => {
@@ -125,6 +128,8 @@ checkNameOrEmail = async (req, res) => {
 };
 
 login = (req, res) => {
+  const ip = req.clientIp;
+
   User.findOne({ $or: [{ email: req.body.email }, { name: req.body.name }] })
     .then((user) => {
       if (!user) {
@@ -140,8 +145,21 @@ login = (req, res) => {
               error: 'Nieprawidłowy login lub hasło.',
             });
           }
-
-          logInResponse(user, res);
+          User.updateOne(
+            { user_id: user.user_id },
+            {
+              $set: {
+                lastLoginIp: ip,
+              },
+            },
+            (err, result) => {
+              if (err) {
+                return res.status(400).json({ error: 'Błąd logowania' });
+              } else {
+                logInResponse(user, res);
+              }
+            }
+          );
         })
         .catch((error) => {
           error500Response(error, res);
@@ -154,6 +172,8 @@ login = (req, res) => {
 
 facebooklogin = (req, res) => {
   const { userId, accessToken } = req.body;
+  const ip = req.clientIp;
+
   let urlGraphFacebook = `https://graph.facebook.com/v2.11/${userId}/?fields=id,name,email&access_token=${accessToken}`;
 
   fetch(urlGraphFacebook, {
@@ -171,7 +191,21 @@ facebooklogin = (req, res) => {
       User.findOne({ fb_id: id })
         .then((fbUser) => {
           if (fbUser) {
-            logInResponse(fbUser, res);
+            User.updateOne(
+              { user_id: fbUser.user_id },
+              {
+                $set: {
+                  lastLoginIp: ip,
+                },
+              },
+              (err, result) => {
+                if (err) {
+                  return res.status(400).json({ error: 'Błąd logowania' });
+                } else {
+                  logInResponse(fbUser, res);
+                }
+              }
+            );
           } else {
             const parsedEmail = parseNameOrEmail(email);
             User.findOne({
@@ -206,6 +240,8 @@ facebooklogin = (req, res) => {
                         name: name.trim(),
                         email: parsedEmail,
                         password: hash,
+                        signUpIp: ip,
+                        lastLoginIp: ip,
                       });
 
                       newUser.save((error, data) => {
