@@ -28,6 +28,7 @@ const User = new Schema(
     },
     signUpIp: { type: String, required: true },
     lastLoginIp: { type: String, required: true },
+    isBlocked: { type: Boolean, required: false, default: false },
   },
   { timestamps: true }
 );

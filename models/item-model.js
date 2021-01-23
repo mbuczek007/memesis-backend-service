@@ -14,6 +14,7 @@ const Item = new Schema(
     firstAcceptedDate: { type: Date, required: false },
     statusChangerUserId: { type: Number, required: false },
     disableComments: { type: Boolean, required: false, default: false },
+    visible: { type: Boolean, required: false, default: true },
     votes: { type: Number, required: false, default: 0 },
     votesCount: { type: Number, required: false, default: 0 },
     userId: { type: Number, required: true },

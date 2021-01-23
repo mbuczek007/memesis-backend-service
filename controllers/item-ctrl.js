@@ -2,6 +2,7 @@ const Item = require('../models/item-model');
 const ItemVotes = require('../models/item-votes-model');
 const User = require('../models/user-model');
 const Comment = require('../models/comment-model');
+const getVideoId = require('get-video-id');
 
 checkMode = (mode) => {
   if (mode === 'accepted' || mode === 'top') {
@@ -40,11 +41,19 @@ createItem = (req, res) => {
     });
   }
 
+  let bodyMediaUrl = mediaUrl;
+
+  if (mediaType === 'yt-video') {
+    const { id } = getVideoId(mediaUrl);
+
+    bodyMediaUrl = id;
+  }
+
   const item = new Item({
     title,
     subtitle,
     source,
-    mediaUrl,
+    mediaUrl: bodyMediaUrl,
     mediaType,
     disableComments,
     userId,
@@ -61,7 +70,9 @@ createItem = (req, res) => {
         message: 'Twój Motywator został dodany pomyślnie.',
       });
     })
-    .catch(() => {
+    .catch((err) => {
+      console.log(err);
+
       return res.status(400).json({
         error:
           'Wystąpił problem podczas dodawania treści. Prosimy spróbować później.',
