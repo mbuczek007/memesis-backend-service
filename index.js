@@ -6,8 +6,8 @@ const db = require('./db');
 const app = express();
 const requestIp = require('request-ip');
 
-const itemRouter = require('./routes/item-router');
 const authRouter = require('./routes/auth-router');
+const itemRouter = require('./routes/item-router');
 const commentRouter = require('./routes/comment-router');
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -17,9 +17,11 @@ app.use(requestIp.mw());
 
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
-app.use('/', itemRouter);
 app.use('/auth/', authRouter);
+app.use('/', itemRouter);
 app.use('/comments/', commentRouter);
+
+app.use('/uploads/items', express.static(__dirname + '/uploads/items'));
 
 const port = process.env.PORT;
 app.listen(port, () => console.log(`Server running on port ${port}`));

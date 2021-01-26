@@ -3,6 +3,8 @@ const ItemVotes = require('../models/item-votes-model');
 const User = require('../models/user-model');
 const Comment = require('../models/comment-model');
 const getVideoId = require('get-video-id');
+const { v4: uuidv4 } = require('uuid');
+const path = require('path');
 
 checkMode = (mode) => {
   if (mode === 'accepted' || mode === 'top') {
@@ -16,6 +18,27 @@ checkMode = (mode) => {
   } else {
     return {};
   }
+};
+
+generateFileName = (fileName) => {
+  return uuidv4() + '-' + Date.now() + path.extname(fileName);
+};
+
+saveItemMethod = (item, res) => {
+  item
+    .save()
+    .then(() => {
+      return res.status(201).json({
+        message: 'Twój Motywator został dodany pomyślnie.',
+      });
+    })
+    .catch((err) => {
+      console.log(err);
+      return res.status(400).json({
+        error:
+          'Wystąpił problem podczas dodawania treści. Prosimy spróbować później.',
+      });
+    });
 };
 
 error500Response = (error, res) => {
@@ -35,25 +58,35 @@ createItem = (req, res) => {
     userId,
   } = req.body;
 
+  let mediaItem = mediaUrl;
+
   if (!req.body) {
     return res.status(400).json({
       error: 'Nie znaleziono danych do dodania.',
     });
   }
 
-  let bodyMediaUrl = mediaUrl;
+  if (
+    mediaType === 'file' &&
+    (!req.files || Object.keys(req.files).length === 0)
+  ) {
+    return res
+      .status(400)
+      .json({ error: 'Nie znaleziono zdjęcia do przesłania.' });
+  }
 
   if (mediaType === 'yt-video') {
     const { id } = getVideoId(mediaUrl);
-
-    bodyMediaUrl = id;
+    mediaItem = id;
+  } else if (mediaType === 'file') {
+    mediaItem = generateFileName(req.files.mediaUrl.name);
   }
 
   const item = new Item({
     title,
     subtitle,
     source,
-    mediaUrl: bodyMediaUrl,
+    mediaUrl: mediaItem,
     mediaType,
     disableComments,
     userId,
@@ -63,21 +96,29 @@ createItem = (req, res) => {
     return res.status(400).json({ error: 'Bład podczas walidacji danych.' });
   }
 
-  item
-    .save()
-    .then(() => {
-      return res.status(201).json({
-        message: 'Twój Motywator został dodany pomyślnie.',
-      });
-    })
-    .catch((err) => {
-      console.log(err);
+  if (mediaType === 'file') {
+    const fileType = req.files.mediaUrl.mimetype;
 
-      return res.status(400).json({
-        error:
-          'Wystąpił problem podczas dodawania treści. Prosimy spróbować później.',
-      });
+    if (
+      fileType !== 'image/png' &&
+      fileType !== 'image/jpg' &&
+      fileType !== 'image/jpeg'
+    ) {
+      return res.status(400).json({ error: 'Nieprawidłowy format pliku.' });
+    }
+
+    req.files.mediaUrl.mv('./uploads/items/' + mediaItem, (err) => {
+      if (err) {
+        return res.status(500).json({
+          error: 'Wystąpił problem z zapisem zdjęcia.',
+        });
+      }
+
+      saveItemMethod(item, res);
     });
+  } else {
+    saveItemMethod(item, res);
+  }
 };
 
 /* deleteItem = async (req, res) => {
@@ -334,8 +375,6 @@ itemStatusChange = (req, res) => {
 };
 
 module.exports = {
-  /*   
-  deleteItem, */
   createItem,
   getItems,
   getItemById,

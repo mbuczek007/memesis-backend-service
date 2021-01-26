@@ -12,7 +12,7 @@ authCheck = (req, res, next) => {
       });
     }
 
-    if (req.body.userId !== userId) {
+    if (parseInt(req.body.userId) !== userId) {
       return res.status(401).json({
         error: 'Unauthorized',
       });
