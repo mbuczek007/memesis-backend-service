@@ -156,7 +156,7 @@ getItemById = (req, res) => {
         as: 'userName',
       },
     },
-    { $unwind: '$userName' },
+    { $unwind: { path: '$userName', preserveNullAndEmptyArrays: true } },
     {
       $lookup: {
         from: Comment.collection.name,
@@ -174,12 +174,10 @@ getItemById = (req, res) => {
         mediaUrl: 1,
         mediaType: 1,
         isAccepted: 1,
-        acceptedDate: 1,
         disableComments: 1,
         votes: 1,
         votesCount: 1,
         createdAt: 1,
-        updatedAt: 1,
         firstAcceptedDate: 1,
         userName: '$userName.name',
         commentsCount: { $size: '$commentsCount' },
@@ -213,7 +211,7 @@ getItems = (req, res) => {
         as: 'userName',
       },
     },
-    { $unwind: '$userName' },
+    { $unwind: { path: '$userName', preserveNullAndEmptyArrays: true } },
     {
       $lookup: {
         from: Comment.collection.name,
@@ -236,7 +234,6 @@ getItems = (req, res) => {
         votes: 1,
         votesCount: 1,
         createdAt: 1,
-        updatedAt: 1,
         firstAcceptedDate: 1,
         userName: '$userName.name',
         commentsCount: { $size: '$commentsCount' },
